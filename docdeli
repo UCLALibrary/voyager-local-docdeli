@@ -1,0 +1,28 @@
+#!/bin/ksh
+# Document delivery
+
+# For logging
+echo "===================="
+date
+
+/m1/voyager/ucladb/sbin/Pcircjob -j26
+# Creates these files
+#ls -l /m1/voyager/ucladb/rpt/opacrequests.OE_LN.out
+#ls -l /m1/voyager/ucladb/rpt/opacrequests.OE_PH.out
+
+# docdeli.pl is missing part of its Oracle environment
+. /export/home/voyager/.profile
+# Endeavor set NAME=`hostname`, but when userid voyager sends mail, we
+#    prefer to put the comment field from /etc/passwd into the From: header 
+unset NAME
+
+/m1/voyager/ucladb/local/docdeli/docdeli.pl
+
+# Creates this file
+#ls -l /m1/voyager/ucladb/rpt/transactions.txt
+
+# Clean up old files
+## Anything more than 14 days old
+find /m1/voyager/ucladb/rpt -type f -name "transactions.txt.*" -mtime +14 -exec rm {} \;
+## Any empty files more than 1 day old
+find /m1/voyager/ucladb/rpt -type f -name "transactions.txt.*" -mtime +1 -size 0 -exec rm {} \;
