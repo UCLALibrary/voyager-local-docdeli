@@ -355,7 +355,7 @@ sub GetRotaData {
 sub GetDBConnection {
   my $schema = 'ucla_preaddb';
   # Requires these files...
-  my $passwd = `/opt/local/bin/get_value.pl /opt/local/bin/vger_db_credentials $schema`;
+  my $passwd = `/usr/local/bin/get_value.pl /opt/local/bin/vger_db_credentials $schema`;
   return DBI->connect ('DBI:Oracle:VGER', $schema, $passwd);
 }
 
