@@ -10,8 +10,9 @@ date
 #ls -l /m1/voyager/ucladb/rpt/opacrequests.OE_LN.out
 #ls -l /m1/voyager/ucladb/rpt/opacrequests.OE_PH.out
 
-# docdeli.pl is missing part of its Oracle environment
-. /export/home/voyager/.profile
+# Get voyager environment, for vars and for cron
+. `echo $HOME | sed "s/$LOGNAME/voyager/"`/.profile.local
+
 # Endeavor set NAME=`hostname`, but when userid voyager sends mail, we
 #    prefer to put the comment field from /etc/passwd into the From: header 
 unset NAME

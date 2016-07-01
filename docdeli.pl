@@ -508,7 +508,7 @@ $Rota_new += 1;
 
 
 
-$mailx = '/usr/bin/mailx';
+$mailx = '/bin/mailx';
 open MAILX, "|$mailx -s '$subject' -c '$cc_email' $t_email" or die "Can not run $mailx $!\n";
 	print MAILX "$message";
 	close MAILX;
