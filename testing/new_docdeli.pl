@@ -353,10 +353,12 @@ sub GetRotaData {
 ##############################
 ##############################
 sub GetDBConnection {
+  my $dsn = "dbi:Oracle:host=localhost;sid=VGER";
   my $schema = 'ucla_preaddb';
   # Requires these files...
-  my $passwd = `/usr/local/bin/get_value.pl /opt/local/bin/vger_db_credentials $schema`;
-  return DBI->connect ('DBI:Oracle:VGER', $schema, $passwd);
+  # TODO: Get VGER_SCRIPTS and VGER_CONFIG from environment, via wrapper shell script if needed.
+  chomp (my $passwd = `/usr/local/bin/voyager/scripts/get_value.pl /usr/local/bin/voyager/config/vger_db_credentials $schema`);
+  return DBI->connect ($dsn, $schema, $passwd);
 }
 
 ##############################
