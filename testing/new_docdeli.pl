@@ -152,15 +152,17 @@ sub ParseLine {
   my @fields = split('\|', $line);
 
   # See https://docs.library.ucla.edu/x/ZoGI for documentation of file format.
+  # $fields[2-7] are user-supplied data, which are empty for OE_LN (book) requests
+  # but at least some normally are populated for OE_PH (copy) requests.
   my %data = (
     'request_id'	=> $fields[0],
     'request_dt'	=> $fields[1],
-    'user_field1'	=> $fields[2],
-    'user_field2'	=> $fields[3],
-    'user_field3'	=> $fields[4],
-    'user_field4'	=> $fields[5],
-    'user_field5'	=> $fields[6],
-    'user_field6'	=> $fields[7],
+    'article_author'	=> $fields[2],
+    'article_title'	=> $fields[3],
+    'article_volume'	=> $fields[4],
+    'article_issue'	=> $fields[5],
+    'article_pages'	=> $fields[6],
+    'article_date'	=> $fields[7],
     'bib_id'		=> $fields[8],
     'title_brief'	=> $fields[9],
     'title_full'	=> $fields[10],
@@ -423,18 +425,18 @@ sub FormatForEmail {
   $message .= "RequestMediaType1=TBD\n";
   # End conditional MONO vs. SERAL [sic]
   $message .= "ReqAuthor=$data{'author'}\n";
-  $message .= "ReqArticleAuthor=TBD\n";
+  $message .= "ReqArticleAuthor=$data{'article_author'}\n";
   $message .= "ReqTitle=$data{'title_full'}\n";
-  $message .= "ReqArticleTitle=TBD\n";
+  $message .= "ReqArticleTitle=$data{'article_title'}\n";
   $message .= "ReqPubPlace=$data{'pub_place'}\n";
   $message .= "ReqPublisher=$data{'publisher'}\n";
   $message .= "ReqEdition=$data{'edition'}\n";
   $message .= "ReqPubDate=$data{'pub_date'}\n";
-  $message .= "ReqPartPubDate=TBD\n";
-  $message .= "ReqPagination=TBD\n";
+  $message .= "ReqPartPubDate=$data{'article_date'}\n";
+  $message .= "ReqPagination=$data{'article_pages'}\n";
   $message .= "ReqISBN=$data{'isbn'}\n";
   $message .= "ReqISSN=$data{'issn'}\n";
-  $message .= "ReqIssueTitle=TBD\n";
+  $message .= "ReqIssueTitle=vol. $data{'article_volume'} iss. $data{'article_issue'}\n";
   # TODO: Rota output
 
   print "$message"; ### DEBUGGING
