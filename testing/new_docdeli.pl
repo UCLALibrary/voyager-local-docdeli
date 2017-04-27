@@ -196,6 +196,7 @@ sub GetVoyagerBibMfhdData {
     $data{'issn'} = $row->{'ISSN'};
     $data{'pub_place'} = $row->{'PUB_PLACE'};
     $data{'publisher'} = $row->{'PUBLISHER'};
+    $data{'pub_date'} = $row->{'PUBLISHER_DATE'};
     # Holdings-level data - different in each row
     my $location_code = $row->{'LOCATION_CODE'};
     my ($rota_priority, $ula_value) = GetRotaData($location_code);
@@ -248,6 +249,7 @@ sub BuildBibMfhdSQL {
     bt.bib_id
   , bt.publisher
   , bt.pub_place
+  , bt.publisher_date
   , bt.isbn
   , bt.issn
   , mm.display_call_no
@@ -412,18 +414,18 @@ sub FormatForEmail {
   $message .= "ReqDeliveryMethod=ILL-DM1\n"; ### This line added only for SERAL [sic]
   $message .= "RequestMediaType1=TBD\n";
   # End conditional MONO vs. SERAL [sic]
-  $message .= "ReqAuthor=TBD\n";
+  $message .= "ReqAuthor=$data{'author'}\n";
   $message .= "ReqArticleAuthor=TBD\n";
-  $message .= "ReqTitle=TBD\n";
+  $message .= "ReqTitle=$data{'title_full'}\n";
   $message .= "ReqArticleTitle=TBD\n";
-  $message .= "ReqPubPlace=TBD\n";
-  $message .= "ReqPublisher=TBD\n";
-  $message .= "ReqEdition=TBD\n";
-  $message .= "ReqPubDate=TBD\n";
+  $message .= "ReqPubPlace=$data{'pub_place'}\n";
+  $message .= "ReqPublisher=$data{'publisher'}\n";
+  $message .= "ReqEdition=$data{'edition'}\n";
+  $message .= "ReqPubDate=$data{'pub_date'}\n";
   $message .= "ReqPartPubDate=TBD\n";
   $message .= "ReqPagination=TBD\n";
-  $message .= "ReqISBN=TBD\n";
-  $message .= "ReqISSN=TBD\n";
+  $message .= "ReqISBN=$data{'isbn'}\n";
+  $message .= "ReqISSN=$data{'issn'}\n";
   $message .= "ReqIssueTitle=TBD\n";
   # TODO: Rota output
 
