@@ -14,10 +14,18 @@ use Data::Dumper qw(Dumper);
 # File format is identical, so same code can handle both.
 ## OE_LN: Document Delivery - Book Request (fee)
 ## OE_PH: Document Delivery - Copy Request (fee)
+## /m1/voyager/ucladb/rpt/opacrequests.OE_LN.out
+## /m1/voyager/ucladb/rpt/opacrequests.OE_PH.out
 
-###ProcessFile("/m1/voyager/ucladb/rpt/opacrequests.OE_LN.out");
-###ProcessFile("/m1/voyager/ucladb/rpt/opacrequests.OE_PH.out");
-ProcessFile("test_all.OE_PH.out");
+# 1 required argument
+if ($#ARGV != 0) {
+  print "\nUsage: $0 opacrequest_file\n";
+  exit 1;
+}
+
+my $opacrequest_file = $ARGV[0];
+
+ProcessFile($opacrequest_file);
 
 # End of main script; real work done by subroutines below.
 exit 0;
