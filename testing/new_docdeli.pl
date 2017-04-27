@@ -22,6 +22,7 @@ ProcessFile("test_all.OE_PH.out");
 # End of main script; real work done by subroutines below.
 exit 0;
 
+##############################
 sub ProcessFile {
   my $input_file = shift;
   my @lines = ReadFile($input_file);
@@ -32,6 +33,7 @@ sub ProcessFile {
     my %data = ParseLine($line);
     %data = AddVoyagerData(%data);
     DumpData(%data); ### DEBUGGING
+    FormatForEmail(%data);
     print "\n";
   }
 }
@@ -166,6 +168,8 @@ sub ParseLine {
     'patron_id'		=> $fields[20],
   );
 
+  # Translate some data for VDX use, keeping original Voyager data for comparison/debugging
+  $data{'client_category'} = TranslatePatronGroup($data{'patron_group_code'});
   return %data;
 }
 
@@ -231,6 +235,7 @@ sub GetVoyagerPatronData {
   $data{'pickup_location'}	= $dbdata->{'PICKUP_LOCATION'};
   $sth->finish();
   $dbh->disconnect();
+
   return %data;
 }
 
@@ -341,10 +346,91 @@ sub GetRotaData {
     }
   }
 
-    return ($rota_priority, $ula_value);
+  return ($rota_priority, $ula_value);
 }
 
 ##############################
+sub TranslatePatronGroup {
+  # Parameter: Voyager patron group code
+  # Returns: Client category Value needed for VDX
+  my $patron_group_code = shift;
+  my $vdx_category;
+  
+  # Fake loop since no supported case/switch in perl...
+  for ($patron_group_code) {
+    # Faculty
+    if    (/^UADD/)   {$vdx_category = 'FACUL';}
+    elsif (/^UALAD/)  {$vdx_category = 'FACUL';}
+    elsif (/^UANLDD/) {$vdx_category = 'FACUL';}
+    elsif (/^UAPDD/)  {$vdx_category = 'FACUL';}
+    # Graduate students
+    elsif (/^UGDD/)   {$vdx_category = 'GRADU';}
+    elsif (/^UGLDD/)  {$vdx_category = 'GRADU';}
+    elsif (/^UGMDD/)  {$vdx_category = 'GRADU';}
+    elsif (/^UGNDD/)  {$vdx_category = 'GRADU';}
+    # Undergraduate students
+    elsif (/^UUDD/)   {$vdx_category = 'UNDRG';}
+    # General patrons
+    elsif (/^USDD/)   {$vdx_category = 'PATRN';}
+    elsif (/^USLDD/)  {$vdx_category = 'PATRN';}
+    # Unexpected patron group
+    else {$vdx_category = "UNKNOWN: $patron_group_code";}
+  }
+
+  return $vdx_category;
+}
+
+##############################
+sub FormatForEmail {
+  my %data = @_;	# Hash, can't just use shift
+
+  print "\n ===== Data for email message =====\n"; ### DEBUGGING
+  # I don't like HEREDOC/qq indentation workarounds in perl; message needs to be strictly formatted
+  my $message = "";
+  $message .= "ReqSymbol=TBD\n";
+  $message .= "ReqVerifySource=DDS Formatted Email\n";
+  $message .= "USERID=$data{'patron_barcode'}\n";
+  $message .= "ClientLocation=TBD\n";
+  $message .= "ClientLastName=$data{'patron_last_name'}, $data{'patron_first_name'}\n";	# Yes: actually last, first...
+  $message .= "ClientCategory=$data{'client_category'}\n";
+  $message .= "ClientAddr4Street=$data{'street_address'}\n";
+  $message .= "ClientAddr4City=$data{'city'}\n";
+  $message .= "ClientAddr4Region=$data{'state_province'}\n";
+  $message .= "ClientAddr4Code=$data{'zip_postal'}\n";
+  $message .= "ClientAddr4Phone=$data{'phone_number'}\n";
+  $message .= "ClientEmailAddress=$data{'email_address'}\n";
+  $message .= "borupb=$data{'client_category'}\n"; # Same as ClientCategory above
+  $message .= "Notes=TBD\n";
+  $message .= "PickupLocation=TBD\n";
+  $message .= "ReqMediaType1=TBD\n";
+  $message .= "WillPayFee=Y\n";
+  $message .= "PatronKey=MELVYLVDX\n";
+  # Start conditional MONO vs. SERAL [sic]
+  $message .= "MaterialType=TBD\n";
+  $message .= "ServiceTp1=TBD\n";
+  $message .= "ServiceTp2=TBD\n";
+  $message .= "ReqDeliveryMethod=ILL-DM1\n"; ### This line added only for SERAL [sic]
+  $message .= "RequestMediaType1=TBD\n";
+  # End conditional MONO vs. SERAL [sic]
+  $message .= "ReqAuthor=TBD\n";
+  $message .= "ReqArticleAuthor=TBD\n";
+  $message .= "ReqTitle=TBD\n";
+  $message .= "ReqArticleTitle=TBD\n";
+  $message .= "ReqPubPlace=TBD\n";
+  $message .= "ReqPublisher=TBD\n";
+  $message .= "ReqEdition=TBD\n";
+  $message .= "ReqPubDate=TBD\n";
+  $message .= "ReqPartPubDate=TBD\n";
+  $message .= "ReqPagination=TBD\n";
+  $message .= "ReqISBN=TBD\n";
+  $message .= "ReqISSN=TBD\n";
+  $message .= "ReqIssueTitle=TBD\n";
+  # TODO: Rota output
+
+  print "$message"; ### DEBUGGING
+
+}
+
 ##############################
 ##############################
 ##############################
