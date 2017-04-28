@@ -190,7 +190,7 @@ sub AddVoyagerData {
   %data = GetVoyagerPatronData(%data);
 
   # Translate some data for VDX use, keeping original Voyager data for comparison/debugging
-  ($data{'req_symbol'}, $data{'client_location'}) = TranslateYDDSHome($data{'ydds_home'});
+  ($data{'req_symbol'}, $data{'client_location'}, $data{'pickup_location'}) = TranslateYDDSHome($data{'ydds_home'});
   return %data;
 }
 
@@ -246,7 +246,7 @@ sub GetVoyagerPatronData {
   $data{'phone_number'}		= $dbdata->{'PHONE_NUMBER'};
   $data{'email_address'}	= $dbdata->{'EMAIL_ADDRESS'};
   $data{'ydds_home'}		= $dbdata->{'YDDS_HOME'};
-  $data{'pickup_location'}	= $dbdata->{'PICKUP_LOCATION'};
+  $data{'wdds_pickup_code'}	= $dbdata->{'WDDS_PICKUP_CODE'};
   $sth->finish();
   $dbh->disconnect();
 
@@ -315,7 +315,7 @@ sub BuildPatronSQL {
       where ps2.patron_id = p.patron_id
       and psc2.patron_stat_desc like 'WDDS%'
       and rownum < 2
-    ) as pickup_location
+    ) as wdds_pickup_code
   from patron p
   inner join patron_address pa on p.patron_id = pa.patron_id
   inner join address_type adt on pa.address_type = adt.address_type
@@ -398,12 +398,14 @@ sub TranslatePatronGroup {
 ##############################
 sub TranslateYDDSHome {
   # Voyager patron data contains a statistical category for YDDS Home location.
-  # This needs to be mapped to two values VDX expects: ReqSymbol and ClientLocation.
+  # This needs to be mapped to three values VDX expects: ReqSymbol, ClientLocation and PickupLocation.
+  # See VBT-290 for discussion of current mapping.
   # Parameter: Voyager YDDS Home value
-  # Returns: Array containing req_symbol and client_location
+  # Returns: Array containing req_symbol, client_location and pickup_location.
   my $ydds_home = shift;
   my $req_symbol;
   my $client_location;
+  my $pickup_location;
   
   # Fake loop since no supported case/switch in perl...
   for ($ydds_home) {
@@ -418,7 +420,10 @@ sub TranslateYDDSHome {
     else {$req_symbol = "UNKNOWN: $ydds_home"; $client_location = $req_symbol;}
   }
 
-  return ($req_symbol, $client_location);
+  # Currently, pickup_location is the same as $req_symbol
+  $pickup_location = $req_symbol;
+
+  return ($req_symbol, $client_location, $pickup_location);
 }
 
 ##############################
@@ -442,7 +447,7 @@ sub FormatForEmail {
   $message .= "ClientEmailAddress=$data{'email_address'}\n";
   $message .= "borupb=$data{'client_category'}\n"; # Same as ClientCategory above
   $message .= "Notes=TBD\n";
-  $message .= "PickupLocation=TBD\n";
+  $message .= "PickupLocation=$data{'pickup_location'}\n";
   $message .= "ReqMediaType1=TBD\n";
   $message .= "WillPayFee=Y\n";
   $message .= "PatronKey=MELVYLVDX\n";
