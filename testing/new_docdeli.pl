@@ -188,6 +188,9 @@ sub AddVoyagerData {
   my %data = @_;	# Hash, can't just use shift
   %data = GetVoyagerBibMfhdData(%data);
   %data = GetVoyagerPatronData(%data);
+
+  # Translate some data for VDX use, keeping original Voyager data for comparison/debugging
+  ($data{'req_symbol'}, $data{'client_location'}) = TranslateYDDSHome($data{'ydds_home'});
   return %data;
 }
 
@@ -242,7 +245,7 @@ sub GetVoyagerPatronData {
   $data{'zip_postal'}		= $dbdata->{'ZIP_POSTAL'};
   $data{'phone_number'}		= $dbdata->{'PHONE_NUMBER'};
   $data{'email_address'}	= $dbdata->{'EMAIL_ADDRESS'};
-  $data{'client_location'}	= $dbdata->{'CLIENT_LOCATION'};
+  $data{'ydds_home'}		= $dbdata->{'YDDS_HOME'};
   $data{'pickup_location'}	= $dbdata->{'PICKUP_LOCATION'};
   $sth->finish();
   $dbh->disconnect();
@@ -305,7 +308,7 @@ sub BuildPatronSQL {
       where ps1.patron_id = p.patron_id
       and psc1.patron_stat_desc like 'YDDS%'
       and rownum < 2
-    ) as client_location
+    ) as ydds_home
   , ( select psc2.patron_stat_desc
       from patron_stats ps2
       inner join patron_stat_code psc2 on ps2.patron_stat_id = psc2.patron_stat_id
@@ -393,16 +396,42 @@ sub TranslatePatronGroup {
 }
 
 ##############################
+sub TranslateYDDSHome {
+  # Voyager patron data contains a statistical category for YDDS Home location.
+  # This needs to be mapped to two values VDX expects: ReqSymbol and ClientLocation.
+  # Parameter: Voyager YDDS Home value
+  # Returns: Array containing req_symbol and client_location
+  my $ydds_home = shift;
+  my $req_symbol;
+  my $client_location;
+  
+  # Fake loop since no supported case/switch in perl...
+  for ($ydds_home) {
+    # Almost all now gets processed by YRL (ULA7 & ULA1)
+    if    (/^YDDSHOME_YRL/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
+    elsif (/^YDDSHOME_Biomed/) {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
+    elsif (/^YDDSHOME_Man/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
+    elsif (/^YDDSHOME_SRLF/)   {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
+    # Law is the only current exception (ULA9 & ULA4)
+    elsif (/^YDDSHOME_Law/)    {$req_symbol = 'ULA9'; $client_location = 'ULA4';}
+    # Unexpected value
+    else {$req_symbol = "UNKNOWN: $ydds_home"; $client_location = $req_symbol;}
+  }
+
+  return ($req_symbol, $client_location);
+}
+
+##############################
 sub FormatForEmail {
   my %data = @_;	# Hash, can't just use shift
 
   print "\n ===== Data for email message =====\n"; ### DEBUGGING
   # I don't like HEREDOC/qq indentation workarounds in perl; message needs to be strictly formatted
   my $message = "";
-  $message .= "ReqSymbol=TBD\n";
+  $message .= "ReqSymbol=$data{'req_symbol'}\n";
   $message .= "ReqVerifySource=DDS Formatted Email\n";
   $message .= "USERID=$data{'patron_barcode'}\n";
-  $message .= "ClientLocation=TBD\n";
+  $message .= "ClientLocation=$data{'client_location'}\n";
   $message .= "ClientLastName=$data{'patron_last_name'}, $data{'patron_first_name'}\n";	# Yes: actually last, first...
   $message .= "ClientCategory=$data{'client_category'}\n";
   $message .= "ClientAddr4Street=$data{'street_address'}\n";
@@ -443,12 +472,6 @@ sub FormatForEmail {
 
 }
 
-##############################
-##############################
-##############################
-##############################
-##############################
-##############################
 ##############################
 sub GetDBConnection {
   my $dsn = "dbi:Oracle:host=localhost;sid=VGER";
