@@ -10,13 +10,6 @@ use strict;
 use DBI;
 use Data::Dumper qw(Dumper);
 
-# This script handles two types of requests, which Voyager creates in two separate files.
-# File format is identical, so same code can handle both.
-## OE_LN: Document Delivery - Book Request (fee)
-## OE_PH: Document Delivery - Copy Request (fee)
-## /m1/voyager/ucladb/rpt/opacrequests.OE_LN.out
-## /m1/voyager/ucladb/rpt/opacrequests.OE_PH.out
-
 # 1 required argument
 if ($#ARGV != 0) {
   print "\nUsage: $0 opacrequest_file\n";
@@ -24,6 +17,18 @@ if ($#ARGV != 0) {
 }
 
 my $opacrequest_file = $ARGV[0];
+
+# This script handles two types of requests, which Voyager creates in two separate files.
+# File format is identical, so same code can handle both.
+## OE_LN: Document Delivery - Book Request (fee)
+## OE_PH: Document Delivery - Copy Request (fee)
+## /m1/voyager/ucladb/rpt/opacrequests.OE_LN.out
+## /m1/voyager/ucladb/rpt/opacrequests.OE_PH.out
+# Exit if this is not an appropriate file, based on Voyager-generated file name.
+if ($opacrequest_file !~ /OE_(LN|PH)/) {
+  print "ERROR: Invalid input file name: $opacrequest_file\n";
+  exit 1;
+}
 
 ProcessFile($opacrequest_file);
 
@@ -33,17 +38,30 @@ exit 0;
 ##############################
 sub ProcessFile {
   my $input_file = shift;
+
   my @lines = ReadFile($input_file);
 
   # Iterate over lines, turning each into an email message
   foreach my $line (@lines) {
     ###DumpLine($line);  ### DEBUGGING
-    my %data = ParseLine($line);
+    my %data;	### Hash to store all of the info about this request
+    %data = ParseLine($line);
     %data = AddVoyagerData(%data);
+    # Add info about request type, derived from input file name
+    $data{'request_type'} = GetRequestType($input_file);
+
     DumpData(%data); ### DEBUGGING
     FormatForEmail(%data);
     print "\n";
   }
+}
+
+##############################
+sub GetRequestType {
+  my $input_file = shift;
+  my $request_type = 'LN';	### Default to book/mono
+  if    ($input_file =~ /OE_LN/) {$request_type = 'LN';}
+  elsif ($input_file =~ /OE_PH/) {$request_type = 'PH';}
 }
 
 ##############################
@@ -471,11 +489,21 @@ sub FormatForEmail {
   $message .= "WillPayFee=Y\n";
   $message .= "PatronKey=MELVYLVDX\n";
   # Start conditional MONO vs. SERAL [sic]
-  $message .= "MaterialType=TBD\n";
-  $message .= "ServiceTp1=TBD\n";
-  $message .= "ServiceTp2=TBD\n";
-  $message .= "ReqDeliveryMethod=ILL-DM1\n"; ### This line added only for SERAL [sic]
-  $message .= "RequestMediaType1=TBD\n";
+  # MONO is used for LN (book) requests; SERAL [sic] for PH (article) requests
+  # request_type can only be LN or PH per GetRequestType().
+  if ($data{'request_type'} eq 'LN') {
+    $message .= "MaterialType=MONO\n";
+    $message .= "ServiceTp1=1\n";
+    $message .= "ServiceTp2=2\n";
+    $message .= "RequestMediaType1=1\n";
+  }
+  else {
+    $message .= "MaterialType=SERAL\n";
+    $message .= "ServiceTp1=2\n";
+    $message .= "ServiceTp2=1\n";
+    $message .= "ReqDeliveryMethod=ILL-DM1\n"; ### This line added only for PH (article) requests
+    $message .= "RequestMediaType1=6\n";
+  }
   # End conditional MONO vs. SERAL [sic]
   $message .= "ReqAuthor=$data{'author'}\n";
   $message .= "ReqArticleAuthor=$data{'article_author'}\n";
@@ -489,7 +517,14 @@ sub FormatForEmail {
   $message .= "ReqPagination=$data{'article_pages'}\n";
   $message .= "ReqISBN=$data{'isbn'}\n";
   $message .= "ReqISSN=$data{'issn'}\n";
-  $message .= "ReqIssueTitle=vol. $data{'article_volume'} iss. $data{'article_issue'}\n";
+  # Always output key, but include data with labels only when data exists.
+  if ( $data{'article_volume'} || $data{'article_issue'} ) {
+    $message .= "ReqIssueTitle=vol. $data{'article_volume'} iss. $data{'article_issue'}\n";
+  }
+  else {
+    $message .= "ReqIssueTitle=\n";
+  }
+
   # TODO: Rota output
 
   print "$message"; ### DEBUGGING
