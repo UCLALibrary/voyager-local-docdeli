@@ -191,6 +191,8 @@ sub AddVoyagerData {
 
   # Translate some data for VDX use, keeping original Voyager data for comparison/debugging
   ($data{'req_symbol'}, $data{'client_location'}, $data{'pickup_location'}) = TranslateYDDSHome($data{'ydds_home'});
+  $data{'wdds_pickup_note'} = TranslateWDDSCode($data{'wdds_pickup_code'});
+
   return %data;
 }
 
@@ -427,6 +429,23 @@ sub TranslateYDDSHome {
 }
 
 ##############################
+sub TranslateWDDSCode {
+  # Parameter: Voyager WDDS Pickup location note
+  # Returns: Modified version of the text, for use in VDX Note field.
+  my $wdds_pickup_in = shift;
+  my $wdds_pickup_out = $wdds_pickup_in;
+
+  # Perform a sequence of replacement, from specific to general
+  $wdds_pickup_out =~ s/WDDS_Web_Mail on campus/Web_Mail On Campus/ig;
+  $wdds_pickup_out =~ s/WDDS_Web_Mail off campus/Web_Mail Off Campus/ig;
+  $wdds_pickup_out =~ s/WDDS_Web/Post on Web/ig;
+  # Finally, just strip off leading WDDS_
+  $wdds_pickup_out =~ s/WDDS_//g;
+
+  return $wdds_pickup_out;
+}
+
+##############################
 sub FormatForEmail {
   my %data = @_;	# Hash, can't just use shift
 
@@ -437,7 +456,7 @@ sub FormatForEmail {
   $message .= "ReqVerifySource=DDS Formatted Email\n";
   $message .= "USERID=$data{'patron_barcode'}\n";
   $message .= "ClientLocation=$data{'client_location'}\n";
-  $message .= "ClientLastName=$data{'patron_last_name'}, $data{'patron_first_name'}\n";	# Yes: actually last, first...
+  $message .= "ClientLastName=$data{'patron_last_name'}, $data{'patron_first_name'}\n";	### Yes: actually last, first...
   $message .= "ClientCategory=$data{'client_category'}\n";
   $message .= "ClientAddr4Street=$data{'street_address'}\n";
   $message .= "ClientAddr4City=$data{'city'}\n";
@@ -446,7 +465,7 @@ sub FormatForEmail {
   $message .= "ClientAddr4Phone=$data{'phone_number'}\n";
   $message .= "ClientEmailAddress=$data{'email_address'}\n";
   $message .= "borupb=$data{'client_category'}\n"; # Same as ClientCategory above
-  $message .= "Notes=TBD\n";
+  $message .= "Notes=$data{'wdds_pickup_note'} Note: $data{'user_comment'}\n"; ### Combined pickup info and any user-supplied comment
   $message .= "PickupLocation=$data{'pickup_location'}\n";
   $message .= "ReqMediaType1=TBD\n";
   $message .= "WillPayFee=Y\n";
