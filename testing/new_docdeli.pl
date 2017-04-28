@@ -467,7 +467,7 @@ sub FormatForEmail {
   $message .= "borupb=$data{'client_category'}\n"; # Same as ClientCategory above
   $message .= "Notes=$data{'wdds_pickup_note'} Note: $data{'user_comment'}\n"; ### Combined pickup info and any user-supplied comment
   $message .= "PickupLocation=$data{'pickup_location'}\n";
-  $message .= "ReqMediaType1=TBD\n";
+  $message .= "ReqMediaType1=\n";	### Set to never-defined ClientLocation2 in original script
   $message .= "WillPayFee=Y\n";
   $message .= "PatronKey=MELVYLVDX\n";
   # Start conditional MONO vs. SERAL [sic]
