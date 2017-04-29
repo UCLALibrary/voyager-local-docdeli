@@ -51,6 +51,7 @@ sub ProcessFile {
     $data{'request_type'} = GetRequestType($input_file);
 
     DumpData(%data); ### DEBUGGING
+    ### print Dumper(%data); ### DEBUGGING
     FormatForEmail(%data);
     print "\n";
   }
@@ -348,6 +349,8 @@ sub BuildPatronSQL {
 sub GetRotaData {
   # Parameter: Voyager location code
   # Returns: array of rota priority and ULA value
+  # 2017-04-28: Per VBT-290, use only ULA4 (Law) and ULA1 (everything else);
+  # same as ClientLocation.  Also now only 2 priorities.
   my $loc = shift;
   my $rota_priority;
   my $ula_value;
@@ -355,25 +358,25 @@ sub GetRotaData {
   # Fake loop since no supported case/switch in perl...
   for ($loc) {
     # Humanities (generally) locations
-    if    (/^ar/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^ck/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^cl/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^ea/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^er/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^mu/) {$rota_priority = 1; $ula_value = 'ULA7';}
-    elsif (/^yr/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    if    (/^ar/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^ck/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^cl/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^ea/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^er/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^mu/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^yr/) {$rota_priority = 1; $ula_value = 'ULA1';}
     # Sciences locations
-    elsif (/^bi/) {$rota_priority = 2; $ula_value = 'ULA8';}
-    elsif (/^sc/) {$rota_priority = 2; $ula_value = 'ULA8';}
-    elsif (/^se/) {$rota_priority = 2; $ula_value = 'ULA8';}
-    elsif (/^sg/) {$rota_priority = 2; $ula_value = 'ULA8';}
-    elsif (/^sm/) {$rota_priority = 2; $ula_value = 'ULA8';}
-    # Law locations
-    elsif (/^lw/) {$rota_priority = 3; $ula_value = 'ULA9';}
+    elsif (/^bi/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^sc/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^se/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^sg/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^sm/) {$rota_priority = 1; $ula_value = 'ULA1';}
     # Management locations
-    elsif (/^mg/) {$rota_priority = 4; $ula_value = 'ULA10';}
+    elsif (/^mg/) {$rota_priority = 1; $ula_value = 'ULA1';}
     # SRLF locations
-    elsif (/^sr/) {$rota_priority = 5; $ula_value = 'ULA11';}
+    elsif (/^sr/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    # Law locations
+    elsif (/^lw/) {$rota_priority = 2; $ula_value = 'ULA4';}
     # Default values if Voyager location does not match
     else {
       $rota_priority = 9999;	# high value = lowest priority
@@ -526,6 +529,49 @@ sub FormatForEmail {
   }
 
   # TODO: Rota output
+  my @rotas = @{$data{'rotas'}};
+###print Dumper(@rotas); ### DEBUGGING
+  @rotas = sort { 
+    $a->{rota_priority} <=> $b->{rota_priority} or
+    $a->{location_code} cmp $b->{location_code} 
+  } @rotas;
+###print "\n**********\n"; ### DEBUGGING
+###print Dumper(@rotas); ### DEBUGGING
+
+  my $rota_message;  # Contains all rota info, formatted for VDX email
+  # Two entries which end each rota
+  my $rota_footer = "Rota.Source=L\nRota.DefaultNamingAuthority=Melvyl\n";
+  my $rota_count = scalar(@rotas);
+  my $old_priority = 0;
+  my $rota_instance = 0;
+  my @call_numbers;
+  foreach my $rota (@rotas) {
+    my $current_priority = $rota->{'rota_priority'};
+    if ($current_priority != $old_priority) {
+      # Either we're on our first rota, or just finished one.
+      if ($rota_instance > 0 ) {
+        # Write final info for previous rota
+        $rota_message .= 'Rota.CallNumber=' . join('; ', @call_numbers) . "\n";
+	$rota_message .= $rota_footer;
+      }
+      # Start a new instance
+      $rota_instance++;
+      $rota_message .= "Rota._new$rota_instance\n";
+      $rota_message .= "Rota.Loc=$rota->{'ula_value'}\n";
+      $old_priority = $current_priority;
+    }
+    # Capture each location and call number with this priority for later formatting
+    push(@call_numbers, "$rota->{'location_code'} $rota->{'call_number'}");
+   
+  } # end of foreach @rotas
+
+  # Write final info for previous rota
+  # TODO: Move this duplicate code to function?
+  $rota_message .= 'Rota.CallNumber=' . join('; ', @call_numbers) . "\n";
+  $rota_message .= $rota_footer;
+
+  # Add all the rota data to the message
+  $message .= "$rota_message\n";
 
   print "$message"; ### DEBUGGING
 
