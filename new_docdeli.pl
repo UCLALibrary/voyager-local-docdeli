@@ -459,7 +459,7 @@ sub TranslateWDDSCode {
   # Perform a sequence of replacement, from specific to general
   $wdds_pickup_out =~ s/WDDS_Web_Mail on campus/Web_Mail On Campus/ig;
   $wdds_pickup_out =~ s/WDDS_Web_Mail off campus/Web_Mail Off Campus/ig;
-  $wdds_pickup_out =~ s/WDDS_Web/Post on Web/ig;
+  $wdds_pickup_out =~ s/WDDS_Web$/Post on Web/ig;
   # Finally, just strip off leading WDDS_
   $wdds_pickup_out =~ s/WDDS_//g;
 
