@@ -586,9 +586,9 @@ sub FormatForEmail {
 sub SendEmail() {
   my $message = shift;
   my $mailer = '/bin/mailx';
-  my $subject = 'TESTING Document_Request';
-  my $to_address = 'akohler@library.ucla.edu';   ### For production : GEN_ucill@vdxhost.com
-  my $cc_address = ''; ### For production: 'lit-libweb@library.ucla.edu';
+  my $subject = 'Document_Request';
+  my $to_address = 'GEN_ucill@vdxhost.com';
+  my $cc_address = 'lit-libweb@library.ucla.edu jcl@library.ucla.edu';
   open MAILER, "|$mailer -s '$subject' -c '$cc_address' $to_address" or die "Can not run $mailer $!\n";
   print MAILER "$message";
   close MAILER;
