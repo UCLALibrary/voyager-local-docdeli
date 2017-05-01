@@ -50,7 +50,7 @@ sub ProcessFile {
     # Add info about request type, derived from input file name
     $data{'request_type'} = GetRequestType($input_file);
 
-    DumpData(%data); ### DEBUGGING
+    ### DumpData(%data); ### DEBUGGING
     ### print Dumper(%data); ### DEBUGGING
     FormatForEmail(%data);
     print "\n";
@@ -573,8 +573,23 @@ sub FormatForEmail {
   # Add all the rota data to the message
   $message .= "$rota_message\n";
 
+  # Send the email
+  SendEmail($message);
+
   print "$message"; ### DEBUGGING
 
+}
+
+##############################
+sub SendEmail() {
+  my $message = shift;
+  my $mailer = '/bin/mailx';
+  my $subject = 'TESTING Document_Request';
+  my $to_address = 'akohler@library.ucla.edu';   ### For production : GEN_ucill@vdxhost.com
+  my $cc_address = ''; ### For production: 'lit-libweb@library.ucla.edu';
+  open MAILER, "|$mailer -s '$subject' -c '$cc_address' $to_address" or die "Can not run $mailer $!\n";
+  print MAILER "$message";
+  close MAILER;
 }
 
 ##############################
