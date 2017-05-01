@@ -553,6 +553,8 @@ sub FormatForEmail {
         # Write final info for previous rota
         $rota_message .= 'Rota.CallNumber=' . join('; ', @call_numbers) . "\n";
 	$rota_message .= $rota_footer;
+	# Clear out call number array for next instance
+	@call_numbers = ();
       }
       # Start a new instance
       $rota_instance++;
