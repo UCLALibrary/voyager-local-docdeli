@@ -512,6 +512,8 @@ $mailx = '/bin/mailx';
 open MAILX, "|$mailx -s '$subject' -c '$cc_email' $t_email" or die "Can not run $mailx $!\n";
 	print MAILX "$message";
 	close MAILX;
+        # 2017-04-06 akohler: Capture full message for debug/compare to new perl script
+        print( TRANS "$message" );
 	}
 }
 
