@@ -432,19 +432,17 @@ sub TranslateYDDSHome {
   
   # Fake loop since no supported case/switch in perl...
   for ($ydds_home) {
-    # Almost all now gets processed by YRL (ULA7 & ULA1)
-    if    (/^YDDSHOME_YRL/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
-    elsif (/^YDDSHOME_Biomed/) {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
-    elsif (/^YDDSHOME_Man/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
-    elsif (/^YDDSHOME_SRLF/)   {$req_symbol = 'ULA7'; $client_location = 'ULA1';}
-    # Law is the only current exception (ULA9 & ULA4)
-    elsif (/^YDDSHOME_Law/)    {$req_symbol = 'ULA9'; $client_location = 'ULA4';}
-    # Unexpected value
-    else {$req_symbol = "UNKNOWN: $ydds_home"; $client_location = $req_symbol;}
+    # Almost all now gets processed by YRL (ULA7 & ULA1), though pickup location varies.
+    if    (/^YDDSHOME_YRL/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1'; $pickup_location = 'ULA7';}
+    elsif (/^YDDSHOME_Biomed/) {$req_symbol = 'ULA7'; $client_location = 'ULA1'; $pickup_location = 'ULA8';}
+    elsif (/^YDDSHOME_Man/)    {$req_symbol = 'ULA7'; $client_location = 'ULA1'; $pickup_location = 'ULA10';}
+    # SRLF gets same pickup as YRL
+    elsif (/^YDDSHOME_SRLF/)   {$req_symbol = 'ULA7'; $client_location = 'ULA1'; $pickup_location = 'ULA7';}
+    # Law is the only current major exception (ULA9 & ULA4)
+    elsif (/^YDDSHOME_Law/)    {$req_symbol = 'ULA9'; $client_location = 'ULA4'; $pickup_location = 'ULA7';}
+    # Unexpected input: set all values to same UNKNOWN
+    else {$req_symbol = "UNKNOWN: $ydds_home"; $client_location = $req_symbol; $pickup_location = $req_symbol;}
   }
-
-  # Currently, pickup_location is the same as $req_symbol
-  $pickup_location = $req_symbol;
 
   return ($req_symbol, $client_location, $pickup_location);
 }
