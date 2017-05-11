@@ -349,8 +349,8 @@ sub BuildPatronSQL {
 sub GetRotaData {
   # Parameter: Voyager location code
   # Returns: array of rota priority and ULA value
-  # 2017-04-28: Per VBT-290, use only ULA4 (Law) and ULA1 (everything else);
-  # same as ClientLocation.  Also now only 2 priorities.
+  # 2017-04-28: Per VBT-290, use only ULA9 (Law) and ULA7 (everything else);
+  # same as ReqSymbol.  Also now only 2 priorities.
   my $loc = shift;
   my $rota_priority;
   my $ula_value;
@@ -358,25 +358,25 @@ sub GetRotaData {
   # Fake loop since no supported case/switch in perl...
   for ($loc) {
     # Humanities (generally) locations
-    if    (/^ar/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^ck/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^cl/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^ea/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^er/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^mu/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^yr/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    if    (/^ar/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^ck/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^cl/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^ea/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^er/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^mu/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^yr/) {$rota_priority = 1; $ula_value = 'ULA7';}
     # Sciences locations
-    elsif (/^bi/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^sc/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^se/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^sg/) {$rota_priority = 1; $ula_value = 'ULA1';}
-    elsif (/^sm/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^bi/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^sc/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^se/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^sg/) {$rota_priority = 1; $ula_value = 'ULA7';}
+    elsif (/^sm/) {$rota_priority = 1; $ula_value = 'ULA7';}
     # Management locations
-    elsif (/^mg/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^mg/) {$rota_priority = 1; $ula_value = 'ULA7';}
     # SRLF locations
-    elsif (/^sr/) {$rota_priority = 1; $ula_value = 'ULA1';}
+    elsif (/^sr/) {$rota_priority = 1; $ula_value = 'ULA7';}
     # Law locations
-    elsif (/^lw/) {$rota_priority = 2; $ula_value = 'ULA4';}
+    elsif (/^lw/) {$rota_priority = 2; $ula_value = 'ULA9';}
     # Default values if Voyager location does not match
     else {
       $rota_priority = 9999;	# high value = lowest priority
